@@ -1,0 +1,14 @@
+# But do not ignore cardano-signer/cardano-signer-modified.js
+!cardano-signer/src/cardano-signer-modified*.js
+
+# Ignore everything in the cardano-signer directory
+cardano-signer/**/*
+
+# Ignore 'node_modules' directory
+node_modules/
+
+# Ignore 'package.json' file (if you don't want it tracked in Git)
+package.json
+
+# Ignore 'package-lock.json' file (if you don't want it tracked in Git)
+package-lock.json
