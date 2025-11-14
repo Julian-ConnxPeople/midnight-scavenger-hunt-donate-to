@@ -1,8 +1,11 @@
-# But do not ignore cardano-signer/cardano-signer-modified.js
+# Ignore everything in the cardano-signer directory
+cardano-signer/*
+
+# But do not ignore the specific modified JS files in the src directory
 !cardano-signer/src/cardano-signer-modified*.js
 
-# Ignore everything in the cardano-signer directory
-cardano-signer/**/*
+# If you want to ignore the rest of the src directory, use this rule
+cardano-signer/src/*
 
 # Ignore 'node_modules' directory
 node_modules/
