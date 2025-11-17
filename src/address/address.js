@@ -5,6 +5,7 @@ import { readAddr2hex } from './../../cardano-signer/src/cardano-signer.js';
 export const AddressType = {
     ByronBase58: 'ByronBase58', // Byron is not tested only fully tested with Shelley Bech32 formats!!
     ShelleyBech32: 'ShelleyBech32',
+    EnterpriseShellyBech32: 'EnterpriseShellyBech32',
 };
 
 // Define an enumeration for address types
@@ -18,13 +19,18 @@ export function getAddressInHexAndVerify(address, address_type, address_public_k
     switch (address_type) {
         case AddressType.ByronBase58:
             base58_address_hex = CardanoWasm.ByronAddress.from_base58(address).to_hex();
-        return bech32_address_hex;
+            return bech32_address_hex;
         case AddressType.ShelleyBech32:
             var address_obj = readAddr2hex(address, address_public_key_hex);
             //console.log(address_obj.type);
-            if (address_public_key_hex && !address_obj.matchPubKey) {
+            if (address_public_key_hex && !address_obj.matchPubKey)
                 throw new Error(`Public key from the Private Key doesn't match with the address: ${address}`); // Propogate public key mismatch error
-        }
+            return address_obj.hex;
+        case AddressType.EnterpriseShellyBech32:
+            var address_obj = readAddr2hex(address, address_public_key_hex);
+            //console.log(address_obj.type);
+            if (address_public_key_hex && !address_obj.matchPubKey)
+                throw new Error(`Public key from the Private Key doesn't match with the address: ${address}`); // Propogate public key mismatch error
             return address_obj.hex;
         default:
             throw new Error(`Error: Invalid address type: ${address_type} for ${address}`);
