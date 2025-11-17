@@ -1,0 +1,52 @@
+mode:
+  # By default, mode is set to test only (it will not push to server, but will log problems found with your keys or addresses etc.)
+  test_only: true
+api:
+  url: 'https://scavenger.prod.gd.midnighttge.io'
+  sleep_between_calls_ms: 500
+# Default global wallet settings, which can be overridden by each source wallet
+globa_wallet_settings:
+    # wallet_type: 'MultiAccountShelleyWallet' // Only one supported right now so no need to specify
+    account_range:
+      start: 0
+      end: 0
+    payment_address_type: 'ShelleyBech32'
+    # Provide either payment_address_range or payment_addresses (comment out the one you don't use)
+    payment_address_range:
+      start: 0
+      end: 0
+source_wallets:
+  my_first_wallet:
+    # Only mnemonic is supported right now
+    private_key:
+      mnemonic: 'your mnemonic phrase goes here'
+    # Specify wallet specific account range which overrides global if its present
+    # Remove account range item if you dont't want a wallet specific range
+    #account_range:
+    #  start: 0
+    #  end: 0
+    # Specify wallet payment address type which overrides global if its present
+    # Remove payment_address_type below if you dont't want a wallet specific address type
+    #payment_address_type: 'ShelleyBech32'
+    # Provide the payment_address_range and, if you want, also the corresponding payment_addresses as this will cross check your intentions (comment what you don't use)
+    # If you provide payment_addresses, the account_range start and end values must match each other and also the account number for the addresses (single value)
+    # Otherwise if you provide only payment address range, it will just derive addresses for that range automatically and try to use them
+    payment_address_range:
+      start: 0
+      end: 1
+    # Provide a specific list of payment addresses
+    # In this case, make sure the applicable account range (global or specific) start and end values match (have same value)
+    # and also that these addresses correspond to that account number
+    payment_addresses:
+      - 'addr1...'
+      - 'addr1...'
+destination_address:
+  # Comment out all [account_*] info if you do not want to verify against the receving account public key
+  # It forms an additional extra verifcation incase of typos (for ShelleyBech32 only type addresses currently)
+  # Key type can be either PublicAccountExtendedBech32XPub (Vespr uses - like xpub1) or PublicAccountExtendedHex (Lace uses - like af34...)
+  account_public_key: 'xpub1...'
+  account_public_key_type: 'PublicAccountExtendedBech32XPub'
+  account_payment_address_index: 0
+  # Only ShelleyBech32 is supported for payment_address_typeright now
+  payment_address_type: 'ShelleyBech32'
+  payment_address: 'addr1...'

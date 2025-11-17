@@ -15,3 +15,6 @@ package.json
 
 # Ignore 'package-lock.json' file (if you don't want it tracked in Git)
 package-lock.json
+
+#Ignore all _ files (my testing files)
+_*

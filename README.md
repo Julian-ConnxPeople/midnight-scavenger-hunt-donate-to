@@ -62,6 +62,9 @@ https://github.com/gitmachtl/cardano-signer/
 * Axios (as not running in browser environment just standalone Node.js, also fetch didn't work well)
 npm install axios
 
+* Js-Yaml (Yaml file/content handling)
+npm install js-yaml
+
 * Might be something else if forgot to list but you will find out
 
 ## Notes
