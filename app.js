@@ -83,7 +83,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function processDonations(config) {
+export async function processDonations(config, donation_state_entries) {
     // Get destination payment public address keys if account info is present for verifcation for destination address if desired (account details specified in [destination_address])
     let destination_payment_public_address_keys
     let destination_payment_public_address_raw_key_hex 
@@ -114,8 +114,6 @@ export async function processDonations(config) {
     catch(error) {
         throw new Error(`Failed to convert/verify destination payment address ${destination_payment_address}: ${error.message}`);
     }
-
-    const data_to_sign = `Assign accumulated Scavenger rights to: ${destination_payment_address}`;
 
     console.log(`Donation will be to ${destination_payment_address}`)
     console.log(`Check wallet config`);
@@ -149,7 +147,7 @@ export async function processDonations(config) {
             for (let payment_address_index = payment_start; payment_address_index <= payment_end; payment_address_index++, index_of_address++) {
                 const wallet_payment_account_address_keys = new WalletPaymentAccountAddressKeys(wallet_payment_and_staking_account_keys.paymentChainPrivateKey, payment_address_index);
                 // We need to get generate the address from the base address, as cardano wasm we are using (non browser version) doesn't expose some things we need
-                const source_payment_address = derivePaymentAddressFromKeys(wallet_name, wallet.payment_address_type, wallet_payment_account_address_keys.paymentPublicAddressRawKey, wallet_staking_account_address_keys.stakingPublicAddressRawKey);
+                var source_payment_address = derivePaymentAddressFromKeys(wallet_name, wallet.payment_address_type, wallet_payment_account_address_keys.paymentPublicAddressRawKey, wallet_staking_account_address_keys.stakingPublicAddressRawKey);
                 const source_payment_public_address_raw_key_hex = wallet_payment_account_address_keys.paymentPublicAddressRawKeyHex;
                 const source_payment_private_key_hex = wallet_payment_account_address_keys.paymentPrivateAddressKeyHex
                 
@@ -170,13 +168,23 @@ export async function processDonations(config) {
                     throw new Error(`Failed to convert/verify source payment address ${source_payment_address}: ${error.message}`);
                 }
 
-                console.log(`Generating Donate_to from ${source_payment_address}`);
+                let final_destination_payment_address
+                if(config.mode.operation === 'donate') {
+                    console.log(`Generating Donate_to from ${source_payment_address}`);
+                    final_destination_payment_address = destination_payment_address;
+                } else if(config.mode.operation === 'check_donate') {
+                    // Set nonsense paymnent address
+                    // This would either return original address not valid or that the address is bad
+                    // Either way we check out own addresses this way without applying a real donation
+                    console.log(`Checking Donate_to from ${source_payment_address}`);
+                    final_destination_payment_address = 'addrinvalid';
+                }
+
+                const data_to_sign = `Assign accumulated Scavenger rights to: ${final_destination_payment_address}`;
 
                 const signature = signDonation(wallet_name, source_payment_address_hex, source_payment_private_key_hex, data_to_sign);
-                const result = sendDonation(wallet_name, config.mode.test_only, config.api.url, source_payment_address, destination_payment_address, signature);
-
-                // We need to now log the result somewhere...
-                // May not have time to do that
+                // Shouldn't really pass the donation_state_entries to sendDonation but need something working quickly
+                const result = sendDonation(wallet_name, config, source_payment_address, final_destination_payment_address, signature, donation_state_entries);
 
                 await sleep(config.api.sleep_between_calls_ms); // throttle the calls to the server
             }
@@ -187,21 +195,51 @@ export async function processDonations(config) {
 // Main function to run the program
 async function main() {
 
-    // ********************************************************
-    // Load configuration from YAML file
-    // ********************************************************
-
+    const donations_state_path = path.join(__dirname, 'donations.json');
+    let json_donation_data;
     try {
-        // Load config from YAML file
-        const configPath = path.join(__dirname, 'app.yaml');
-        const content = fs.readFileSync(configPath, 'utf8');
-        const yamlContent = yaml.load(content);
+        // ********************************************************
+        // Load configuration from YAML file
+        // ********************************************************
 
-        if (!yamlContent) {
+        // Load config from YAML file
+        const config_path = path.join(__dirname, 'app.yaml');
+        const content = fs.readFileSync(config_path, 'utf8');
+        const yaml_content = yaml.load(content);
+
+        if (!yaml_content) {
             throw new Error('Configuration app.yaml is empty');
         }
 
-        const config = new Config(yamlContent);
+        const config = new Config(yaml_content);
+
+        // ********************************************************
+        // Load state data from JSON
+        // ********************************************************
+
+        // Load donation state data from json file
+        // Check if the file exists
+        if (fs.existsSync(donations_state_path)) {
+            try {
+                console.log(donations_state_path);
+                // Synchronously read the file content
+                const donations_json_content = fs.readFileSync(donations_state_path, 'utf8');
+
+                // Parse the JSON content
+                if(donations_json_content)
+                    json_donation_data = JSON.parse(donations_json_content); // Parse the JSON data
+            } catch (error) {
+                throw new Error(`Unable to parse donatations state file at ${donations_state_path}`);
+            }
+        } else {
+            console.warn('There is no donations state data yet to load. It will be initialised.');
+        }
+        // If no json donation data, let's initalise it
+        if(!json_donation_data)
+            json_donation_data = {};
+
+        // Example: Filter data where 'last_donation_state' is "active"
+        //donation_state_entries = Object.entries(json_donation_data);
 
         if (config.mode.test_only) {
             console.log("*********************************************************")
@@ -209,10 +247,21 @@ async function main() {
             console.log("*********************************************************")
         }
 
-        processDonations(config);    
+        // run donations
+        await processDonations(config, json_donation_data);
     }
     catch(error) {
         console.log(`App failed with error: ${error.message}`);
+    }
+    finally {
+        if(json_donation_data) {
+            console.warn(`Writing updated donation state even on app failure (don't interupt process!)`);
+            // Convert the updated data back to a JSON string
+            const donations_json_content = JSON.stringify(json_donation_data);
+            // Write the updated data back to the file, overwriting the original file
+            fs.writeFileSync(donations_state_path, donations_json_content, 'utf8');
+            console.log(`App completed`);
+        }
     }
 }
 
