@@ -5,11 +5,12 @@ api:
   url: 'https://scavenger.prod.gd.midnighttge.io'
   sleep_between_calls_ms: 500
 # Default global wallet settings, which can be overridden by each source wallet
-globa_wallet_settings:
+global_wallet_settings:
     # wallet_type: 'MultiAccountShelleyWallet' // Only one supported right now so no need to specify
     account_range:
       start: 0
       end: 0
+    # Can be ShelleyBech32 or EnterpriseShellyBech32 types
     payment_address_type: 'ShelleyBech32'
     # Provide either payment_address_range or payment_addresses (comment out the one you don't use)
     payment_address_range:
@@ -27,6 +28,7 @@ source_wallets:
     #  end: 0
     # Specify wallet payment address type which overrides global if its present
     # Remove payment_address_type below if you dont't want a wallet specific address type
+    # Can be ShelleyBech32 or EnterpriseShellyBech32 types
     #payment_address_type: 'ShelleyBech32'
     # Provide the payment_address_range and, if you want, also the corresponding payment_addresses as this will cross check your intentions (comment what you don't use)
     # If you provide payment_addresses, the account_range start and end values must match each other and also the account number for the addresses (single value)

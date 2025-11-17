@@ -2,6 +2,7 @@
 import {
   Address,
   BaseAddress,
+  EnterpriseAddress,
   Credential,
   Ed25519KeyHash,
   Bip32PrivateKey,
@@ -9,7 +10,7 @@ import {
   NetworkInfo
 } from '@emurgo/cardano-serialization-lib-nodejs';
 import bip39 from 'bip39';
-import { PublicKeyAddressType } from './../address/address.js';
+import { AddressType, PublicKeyAddressType } from './../address/address.js';
 
 // Use multiple classes from the same namespace
 //const Address = CardanoWasm.Address;
@@ -356,17 +357,33 @@ export function derivePaymentAddressFromKeys(wallet_name, address_type, payment_
     const networkId = NetworkInfo.mainnet().network_id();
 
     const payment_hash = payment_address_public_raw_key.hash();
-    const stake_hash= staking_address_public_raw_key.hash();
-
+    
     // Credential is new (StakeCredential was old name!)
     const payment_cred = Credential.from_keyhash(payment_hash);
-    const stake_cred = Credential.from_keyhash(stake_hash);
 
-    const base_address = BaseAddress.new(
-        networkId,
-        payment_cred,
-        stake_cred
-    );
+    let stake_cred;
+    let base_address;
+    switch (address_type) {
+        //case AddressType.ByronBase58:
+        case AddressType.ShelleyBech32:
+            const stake_hash= staking_address_public_raw_key.hash();
+            stake_cred = Credential.from_keyhash(stake_hash);
+            base_address = BaseAddress.new(
+                networkId,
+                payment_cred,
+                stake_cred
+            );
+            break;
+        case AddressType.EnterpriseShellyBech32:
+            // Enterprise addresses do not have a staking part, so pass `null` for the stake credential
+            base_address = EnterpriseAddress.new(
+                networkId,
+                payment_cred
+            );
+            break;
+        default:
+            throw new Error(`Address type is not supported: ${address_type} for ${address}`);
+    }
 
     const payment_address = base_address.to_address().to_bech32();
 
