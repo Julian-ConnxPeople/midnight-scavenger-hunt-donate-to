@@ -45,6 +45,19 @@ export class Config {
         for (const wallet_name in wallets) {
             const wallet = wallets[wallet_name];
 
+            // Check force donations
+            let force_donations = wallet?.force_donations;
+            if(!force_donations)
+                force_donations = yaml?.global_wallet_settings?.force_donations;
+            if(!force_donations) {
+                force_donations = false; // Set default if not provided at all
+                console.warn(`Using default [force_donations] for wallet '${wallet_name}' to [false] as none specified.`);
+            }
+            if(typeof force_donations !== 'boolean')
+                throw Error(`The key [wallet.force_donations] is missing or not defined correctly in the configuration file. Please define/set it correctly or remove.`);
+
+            this.source_wallets[wallet_name].force_donations = force_donations;
+
             let mnemonic = wallet?.private_key?.mnemonic;
             if (!mnemonic || mnemonic.length === 0) {
                 throw new Error(`Missing or invalid [private_key.mnemonic] for wallet [${wallet_name}].`);

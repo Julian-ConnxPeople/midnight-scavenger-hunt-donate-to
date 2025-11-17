@@ -90,14 +90,6 @@ export function sendDonation(
             },
         };
 
-        // Get or create source address donation state
-        if (!(source_address in donation_state_entries)) {
-            donation_state_entries[source_address] = {
-                last_donation_state: 'inactive',
-                dest_addr: '',
-                last_info_message: ''
-            };
-        }
         const source_address_state = donation_state_entries[source_address];
 
         // Post using Axios as default fetch had problems with the url
