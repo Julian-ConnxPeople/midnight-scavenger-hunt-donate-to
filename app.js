@@ -152,10 +152,14 @@ export async function processDonations(config) {
                 const source_payment_address = derivePaymentAddressFromKeys(wallet_name, wallet.payment_address_type, wallet_payment_account_address_keys.paymentPublicAddressRawKey, wallet_staking_account_address_keys.stakingPublicAddressRawKey);
                 const source_payment_public_address_raw_key_hex = wallet_payment_account_address_keys.paymentPublicAddressRawKeyHex;
                 const source_payment_private_key_hex = wallet_payment_account_address_keys.paymentPrivateAddressKeyHex
-                const provided_source_payment_address = wallet.payment_addresses[index_of_address];
+                
+                // Payment addresses is optional
+                if(wallet.payment_addresses) {
+                     const provided_source_payment_address = wallet.payment_addresses[index_of_address];
 
-                if(provided_source_payment_address !== source_payment_address)
-                    throw new Error(`Derived payment address ${source_payment_address} did not match provided address ${provided_source_payment_address} for address index ${payment_address_index}`);
+                    if(provided_source_payment_address !== source_payment_address)
+                        throw new Error(`Derived payment address ${source_payment_address} did not match provided address ${provided_source_payment_address} for address index ${payment_address_index}`);
+                }
 
                 let source_payment_address_hex;
                 try {
