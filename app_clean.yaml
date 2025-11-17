@@ -1,21 +1,23 @@
 mode:
-  # By default, mode is set to test only (it will not push to server, but will log problems found with your keys or addresses etc.)
+  # By default, mode is set to test only (it will not send requests to server, but will log problems found with your keys or addresses etc.)
   test_only: true
+  # 'donate', 'check_donate' (default is donate, check_donate unfortunately can only verify if original address is registered and ok, not the actual assigment)
+  operation: 'donate'
 api:
   url: 'https://scavenger.prod.gd.midnighttge.io'
   sleep_between_calls_ms: 500
 # Default global wallet settings, which can be overridden by each source wallet
 global_wallet_settings:
-    # wallet_type: 'MultiAccountShelleyWallet' // Only one supported right now so no need to specify
-    account_range:
-      start: 0
-      end: 0
-    # Can be ShelleyBech32 or EnterpriseShellyBech32 types
-    payment_address_type: 'ShelleyBech32'
-    # Provide either payment_address_range or payment_addresses (comment out the one you don't use)
-    payment_address_range:
-      start: 0
-      end: 0
+  # wallet_type: 'MultiAccountShelleyWallet' // Only one supported right now so no need to specify
+  account_range:
+    start: 0
+    end: 0
+  # Can be ShelleyBech32 or EnterpriseShellyBech32 types
+  payment_address_type: 'ShelleyBech32'
+  # Provide either payment_address_range or payment_addresses (comment out the one you don't use)
+  payment_address_range:
+    start: 0
+    end: 0
 source_wallets:
   my_first_wallet:
     # Only mnemonic is supported right now

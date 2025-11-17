@@ -6,8 +6,17 @@ export class Config {
 
         const test_only = yaml?.mode?.test_only;
         if(typeof test_only !== 'boolean')
-            throw Error(`The key [mode.test_only] for the API is missing or not defined correctly in the configuration file. Please define it and set to true for testing.`)
+            throw Error(`The key [mode.test_only] for the API is missing or not defined correctly in the configuration file. Please define it and set to true for testing.`);
         this.mode = yaml.mode;
+
+        const operation = yaml.mode?.operation;
+        if (!operation || typeof operation !== 'string')
+            throw Error(`The key [mode.operation] for the API is missing or not defined correctly in the configuration file. Please define it correctly.`);
+
+        const allowedOperations = new Set(['donate', 'check_donate']);
+        if (!allowedOperations.has(operation))
+            throw Error(`Please define a valid operation (donate, check_donate).`);
+        this.mode.operation = operation;
 
         const api_url = yaml?.api?.url;
         if(!api_url)
