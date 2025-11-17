@@ -120,11 +120,11 @@ export async function processDonations(config, donation_state_entries) {
 
     // Loop through each wallet and generate combinations based on account range and payment address range or payment addresses
     for (const wallet_name in config.source_wallets) {
-        console.log(`Processing donations for wallet [${wallet_name}]`);
+        console.log(`Processing donations for wallet [${wallet_name}].`);
         const wallet = config.source_wallets[wallet_name];
 
         // Get the account range and generate combinations based on the range
-        const { account_range } = wallet;
+        const { account_range, force_donations } = wallet;
         const { start: account_start, end: account_end } = account_range;
 
         // Note all structure vaidations are done when cofiguration was loaded
@@ -133,6 +133,11 @@ export async function processDonations(config, donation_state_entries) {
         // We could pass the pass phrase but for now was assume empty '' (this is not the same as wallet password but rather the 25th word!!)
         const wallet_keys = deriveWalletKeys(wallet_name, wallet.private_key.mnemonic, '');
         
+        if(force_donations)
+            console.log(`Force donations is on for wallet [${wallet_name}] so all will be retried and the status updated.`);
+        else
+            console.log(`Delta donations for wallet [${wallet_name}] will be sent (non active or missing in state). Use force to override.`);
+
         // Loop through accounts in the range [start, end]
         for (let account_number = account_start; account_number <= account_end; account_number++) {
             const wallet_payment_and_staking_account_keys = new WalletPaymentAndStakingAccountKeys(wallet_name, wallet_keys.rootPrivateCoinTypeKey, account_number);
@@ -167,26 +172,42 @@ export async function processDonations(config, donation_state_entries) {
                 catch(error) {
                     throw new Error(`Failed to convert/verify source payment address ${source_payment_address}: ${error.message}`);
                 }
-
-                let final_destination_payment_address
-                if(config.mode.operation === 'donate') {
-                    console.log(`Generating Donate_to from ${source_payment_address}`);
-                    final_destination_payment_address = destination_payment_address;
-                } else if(config.mode.operation === 'check_donate') {
-                    // Set nonsense paymnent address
-                    // This would either return original address not valid or that the address is bad
-                    // Either way we check out own addresses this way without applying a real donation
-                    console.log(`Checking Donate_to from ${source_payment_address}`);
-                    final_destination_payment_address = 'addrinvalid';
+                
+                // Get or create source address donation state
+                if (!(source_payment_address in donation_state_entries)) {
+                    donation_state_entries[source_payment_address] = {
+                        wallet: wallet_name,
+                        last_donation_state: 'inactive',
+                        dest_addr: '',
+                        last_info_message: ''
+                    };
                 }
+                // Update wallet name, also as last version didn't have this so we make sure we add it (also if user changes name in future and reruns)
+                donation_state_entries[source_payment_address].wallet = wallet_name;
+                const last_donation_state = donation_state_entries[source_payment_address].last_donation_state;
 
-                const data_to_sign = `Assign accumulated Scavenger rights to: ${final_destination_payment_address}`;
+                // Only send donations for those that need it or if we requested a basic check (though check donation doesn't unfortunately check the entire assigment)
+                if(force_donations || last_donation_state !== 'active' || last_donation_state === 'check_donate') {
+                    let final_destination_payment_address
+                    if(config.mode.operation === 'donate') {                    
+                        console.log(`Generating Donate_to from ${source_payment_address}`);
+                        final_destination_payment_address = destination_payment_address;
+                    } else if(config.mode.operation === 'check_donate') {
+                        // Set nonsense paymnent address
+                        // This would either return original address not valid or that the address is bad
+                        // Either way we check out own addresses this way without applying a real donation
+                        console.log(`Checking Donate_to from ${source_payment_address}`);
+                        final_destination_payment_address = 'addrinvalid';
+                    }
 
-                const signature = signDonation(wallet_name, source_payment_address_hex, source_payment_private_key_hex, data_to_sign);
-                // Shouldn't really pass the donation_state_entries to sendDonation but need something working quickly
-                const result = sendDonation(wallet_name, config, source_payment_address, final_destination_payment_address, signature, donation_state_entries);
+                    const data_to_sign = `Assign accumulated Scavenger rights to: ${final_destination_payment_address}`;
 
-                await sleep(config.api.sleep_between_calls_ms); // throttle the calls to the server
+                    const signature = signDonation(wallet_name, source_payment_address_hex, source_payment_private_key_hex, data_to_sign);
+                    // Shouldn't really pass the donation_state_entries to sendDonation but need something working quickly
+                    const result = sendDonation(wallet_name, config, source_payment_address, final_destination_payment_address, signature, donation_state_entries);
+
+                    await sleep(config.api.sleep_between_calls_ms); // throttle the calls to the server
+                }
             }
         }
     }

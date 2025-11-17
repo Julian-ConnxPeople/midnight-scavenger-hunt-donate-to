@@ -9,6 +9,8 @@ api:
 # Default global wallet settings, which can be overridden by each source wallet
 global_wallet_settings:
   # wallet_type: 'MultiAccountShelleyWallet' // Only one supported right now so no need to specify
+  # Donations will only be executed where they are not already active in state file, unless you want to force them again
+  force_donations: false
   account_range:
     start: 0
     end: 0
