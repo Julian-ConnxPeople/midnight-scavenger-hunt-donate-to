@@ -16,7 +16,7 @@ function extractAddr1(str) {
   return match ? match[0] : null;
 }
 
-export function sendDonation(
+export async function sendDonation(
     wallet_name,
     config,
     source_address,
@@ -93,7 +93,7 @@ export function sendDonation(
         const source_address_state = donation_state_entries[source_address];
 
         // Post using Axios as default fetch had problems with the url
-        axios.post(finalUrl, null, options).then(response => {
+        await axios.post(finalUrl, null, options).then(response => {
             // Axios: Check success with status
             if (response.status >= 200 && response.status < 300) {
                 source_address_state.last_donation_state = 'active';
