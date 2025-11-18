@@ -147,6 +147,7 @@ export function sendDonation(
                                 if(source_address_state.last_donation_state === 'active')
                                     source_address_state.last_info_message = 'Donation state was previously active, but api is saying source address has not accepted terms. Something strange.';
                                 else {
+                                    source_address_state.last_donation_state = "original_not_registered";
                                     source_address_state.last_donation_state = 'no_source_address_registration_with_agreed_terms';
                                     source_address_state.last_info_message = 'Source address is not registered and has not signed terms';
                                 }
@@ -156,14 +157,24 @@ export function sendDonation(
                                 if(source_address_state.last_donation_state === 'active')
                                     source_address_state.last_info_message = 'Donation state was previously active, but api is saying source address is not registered. Something strange.';
                                 else {
+                                    source_address_state.last_donation_state = "original_not_registered";
                                     source_address_state.last_donation_state = 'no_source_address_registration';
                                     source_address_state.last_info_message = 'Source address is not registered';
                                 }
                                 console.log(`- NO_ORIGINAL_REGISTRATION. Orig: ${source_address} - ${error.response.status}`);
                             }
                         } else if(responseMessageLowerCase.includes('destination')) {
-                            source_address_state.last_info_message = 'Donation check done and validated original address registration.';
-                            console.log(`- ORIGINAL_ADDRESS_FOUND_AND_VALID_BUT_ASSIGMENT_UNKNOWN. Sorry, no way to check more unless you run real donation.`);
+                            if(source_address_state.last_donation_state === 'active') {
+                                source_address_state.last_info_message = 'Donation check done and validated original address registration.';
+                                console.log(`- ORIGINAL_ADDR_FOUND_AND_HAS_ACTIVE_ASSIGNMENT_IN_LOCAL_STATE. No way to check remote assignment without real donation.`);
+                            }
+                            else {
+                                // For check we didn't send valid registration so we can't log anything other than original address ok
+                                source_address_state.last_donation_state = "original_registered";
+                                source_address_state.last_info_message = 'Donation check done and validated original address registration.';
+                                console.log(`- ORIGINAL_ADDR_FOUND_AND_VALID_BUT_ASSIGMENT_UNKNOWN. Sorry, no way to check remote assignment without real donation.`);
+                            }
+                            
                             success = true
                         } else {
                             console.log(`- UNKNOWN - Unhandled is not registered response ${error.response.status} - ${getStatusDescription(error.response.status)} - ${error.response.statusText}`);
@@ -173,6 +184,7 @@ export function sendDonation(
                     // That error comes first before checking the original address assignment in api unfortunately
                     else if(responseMessageLowerCase.includes('has an active donation assignment to')) {
                         source_address_state.last_donation_state = 'active';
+                        // We won't update state message as we want to keep the original active last message
                         const already_registered_address = extractAddr1(responseMessageLowerCase)
                         source_address_state.dest_addr = already_registered_address;
                         console.log(`- OK - Already assigned to ${already_registered_address}`);
@@ -182,6 +194,7 @@ export function sendDonation(
                         console.log(`- UNKNOWN - Unhandled response ${error.response.status} - ${getStatusDescription(error.response.status)} - ${error.response.statusText}`);
                 } else if(responseMessageLowerCase.includes('has an active donation assignment to')) {
                         source_address_state.last_donation_state = 'active';
+                        // We won't update state message as we want to keep the original active last message
                         const already_registered_address = extractAddr1(responseMessageLowerCase)
                         if(!source_address_state.dest_addr)
                              source_address_state.dest_addr = already_registered_address;
