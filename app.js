@@ -85,12 +85,14 @@ function sleep(ms) {
 }
 
 // Process donations (delta or all)
-async function processDonations(config, donation_state_entries) {
+async function processDonations(config, donation_state_entries, { signal }) {
+    signal.throwIfAborted();  // immediate cancel check
+
     // Get destination payment public address keys if account info is present for verifcation for destination address if desired (account details specified in [destination_address])
-    let destination_payment_public_address_keys
-    let destination_payment_public_address_raw_key_hex 
+    let destination_payment_public_address_keys;
+    let destination_payment_public_address_raw_key_hex;
     
-    console.log(`Check destination config`);
+    console.log(`Load destination config`);
 
     if(config.destination_address.has_account_info) {
         const { 
@@ -100,13 +102,13 @@ async function processDonations(config, donation_state_entries) {
         } = config.destination_address;
 
         destination_payment_public_address_keys = derivePaymentPublicAddressKeysFromPublicAccountKey(destination_account_public_key, destination_account_public_key_type, destination_account_payment_address_index);
-        destination_payment_public_address_raw_key_hex = destination_payment_public_address_keys.paymentPublicAddressRawKeyHex
+        destination_payment_public_address_raw_key_hex = destination_payment_public_address_keys.paymentPublicAddressRawKeyHex;
     }
 
     const { 
         payment_address: destination_payment_address,
         payment_address_type: destination_payment_address_type, 
-    } = config.destination_address
+    } = config.destination_address;
 
     let destination_payment_address_hex
     try {
@@ -117,12 +119,13 @@ async function processDonations(config, donation_state_entries) {
         throw new Error(`Failed to convert/verify destination payment address ${destination_payment_address}: ${error.message}`);
     }
 
-    console.log(`Donation will be to ${destination_payment_address}`)
-    console.log(`Check wallet config`);
+    console.log(`Donation will be to ${destination_payment_address}`);
 
     // Loop through each wallet and generate combinations based on account range and payment address range or payment addresses
     for (const wallet_name in config.source_wallets) {
+        console.log(`**********************************************************`);
         console.log(`Processing donations for wallet [${wallet_name}].`);
+        console.log(`**********************************************************`);
         const wallet = config.source_wallets[wallet_name];
 
         // Get the account range and generate combinations based on the range
@@ -138,7 +141,7 @@ async function processDonations(config, donation_state_entries) {
         if(force_donations)
             console.log(`Force donations is on for wallet [${wallet_name}] so all will be retried and the status updated.`);
         else
-            console.log(`Delta donations for wallet [${wallet_name}] will be sent (non active or missing in state). Use force to override.`);
+            console.log(`Only delta donations for wallet [${wallet_name}] will be sent (non active or missing in state). Use force to override.`);
 
         // Loop through accounts in the range [start, end]
         for (let account_number = account_start; account_number <= account_end; account_number++) {
@@ -213,13 +216,16 @@ async function processDonations(config, donation_state_entries) {
 
                     await sleep(config.api.sleep_between_calls_ms); // throttle the calls to the server
                 }
+
+                // Check cancel
+                signal.throwIfAborted();    
             }
         }
     }
 }
 
 // function to run the program
-export async function startApp(donations_state_path, json_donation_data) {
+export async function startApp(donations_state_path, json_donation_data, { signal } = {}) {
     // ********************************************************
     // Load configuration from YAML file
     // ********************************************************
@@ -270,20 +276,22 @@ export async function startApp(donations_state_path, json_donation_data) {
         console.log("*********************************************************")
     }
 
-    console.log(json_donation_data);
+    //console.log(json_donation_data);
 
     // run donations
-    await processDonations(config, json_donation_data);
+    await processDonations(config, json_donation_data, { signal });
 }
 
 // AppRunner so we can handle control-c and make sure we capture donations state on exit correctly
 class AppRunner {
+    #abortController = new AbortController();
     #donations_state_path = path.join(__dirname, 'donations.json');
     #json_donation_data = {};
 
     constructor() {
         process.on('SIGINT', async () => {
             console.log(" Ctrl+C handling started...");
+            this.#abortController.abort();  // request cancel of running process
             await this.closeApp();
             process.exit(0); // ensures app stops
         });
@@ -291,7 +299,10 @@ class AppRunner {
 
     async run() {
         try {
-            await startApp(this.#donations_state_path, this.#json_donation_data);
+            await startApp(
+                this.#donations_state_path, 
+                this.#json_donation_data,
+                { signal: this.#abortController.signal } );
         }
         catch(error) {
             console.log(`App failed with error: ${error.message}`);
