@@ -160,7 +160,7 @@ async function processDonations(config, donation_state_entries) {
                 
                 // Payment addresses is optional
                 if(wallet.payment_addresses) {
-                     const provided_source_payment_address = wallet.payment_addresses[index_of_address];
+                    const provided_source_payment_address = wallet.payment_addresses[index_of_address];
 
                     if(provided_source_payment_address !== source_payment_address)
                         throw new Error(`Derived payment address ${source_payment_address} did not match provided address ${provided_source_payment_address} for address index ${payment_address_index}`);
@@ -181,11 +181,14 @@ async function processDonations(config, donation_state_entries) {
                         wallet: wallet_name,
                         last_donation_state: 'inactive',
                         dest_addr: '',
+                        dest_addr_index: payment_address_index,
                         last_info_message: ''
                     };
                 }
                 // Update wallet name, also as last version didn't have this so we make sure we add it (also if user changes name in future and reruns)
+                // Same for payment_address_index
                 donation_state_entries[source_payment_address].wallet = wallet_name;
+                donation_state_entries[source_payment_address].dest_addr_index = payment_address_index;
                 const last_donation_state = donation_state_entries[source_payment_address].last_donation_state;
 
                 // Only send donations for those that need it or if we requested a basic check (though check donation doesn't unfortunately check the entire assigment)

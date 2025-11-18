@@ -102,11 +102,11 @@ export function sendDonation(
                 if (response.ok) {// If response status is 2xx
                     source_address_state.last_donation_state = 'active'
                     source_address_state.dest_addr = destination_address;
-                    source_address_state.last_info_message = 'First time assignment successfull';
+                    source_address_state.last_info_message = 'First time assignment successful';
 
                     if(operation === 'check_donate') {
                         console.log("- STOP: This would never happen in practise as donation destination address is always a nonsense value.");
-                        throw new Error(`SERIOUS:"Check donate resulted in a successfull assignement. Don't use check_donate if this ever happens (it won't)`);
+                        throw new Error(`SERIOUS:"Check donate resulted in a successful assignement. Don't use check_donate if this ever happens (it won't)`);
                     }
                     
                     console.log("- OK");
@@ -114,9 +114,8 @@ export function sendDonation(
                     success = true;
                 } else {
                     // We check donate status further in error handling to see if ok or not
-                    if(operation !== 'check_donate') {
+                    if(operation !== 'check_donate')
                         console.log("- NOT_OK - ${response.status} ${response.statusText}");
-                    }
                 }
 
                 // Parse and return the JSON data if the request was successful
@@ -148,7 +147,6 @@ export function sendDonation(
                                     source_address_state.last_info_message = 'Donation state was previously active, but api is saying source address has not accepted terms. Something strange.';
                                 else {
                                     source_address_state.last_donation_state = "original_not_registered";
-                                    source_address_state.last_donation_state = 'no_source_address_registration_with_agreed_terms';
                                     source_address_state.last_info_message = 'Source address is not registered and has not signed terms';
                                 }
                                 console.log(`- NO_ORIGINAL_REGISTRATION_WITH_ACCEPTED_TERMS. Orig: ${source_address} - ${error.response.status}`);
@@ -158,7 +156,6 @@ export function sendDonation(
                                     source_address_state.last_info_message = 'Donation state was previously active, but api is saying source address is not registered. Something strange.';
                                 else {
                                     source_address_state.last_donation_state = "original_not_registered";
-                                    source_address_state.last_donation_state = 'no_source_address_registration';
                                     source_address_state.last_info_message = 'Source address is not registered';
                                 }
                                 console.log(`- NO_ORIGINAL_REGISTRATION. Orig: ${source_address} - ${error.response.status}`);
@@ -194,7 +191,6 @@ export function sendDonation(
                         console.log(`- UNKNOWN - Unhandled response ${error.response.status} - ${getStatusDescription(error.response.status)} - ${error.response.statusText}`);
                 } else if(responseMessageLowerCase.includes('has an active donation assignment to')) {
                         source_address_state.last_donation_state = 'active';
-                        // We won't update state message as we want to keep the original active last message
                         const already_registered_address = extractAddr1(responseMessageLowerCase)
                         if(!source_address_state.dest_addr)
                              source_address_state.dest_addr = already_registered_address;
