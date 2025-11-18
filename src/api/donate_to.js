@@ -144,7 +144,7 @@ export function sendDonation(
                     if(responseMessageLowerCase.includes('is not registered')) {
                         if(responseMessageLowerCase.includes('original')) {
                             if(responseMessageLowerCase.includes('has not accepted')) {
-                                if(last_donation_state === 'active')
+                                if(source_address_state.last_donation_state === 'active')
                                     source_address_state.last_info_message = 'Donation state was previously active, but api is saying source address has not accepted terms. Something strange.';
                                 else {
                                     source_address_state.last_donation_state = 'no_source_address_registration_with_agreed_terms';
@@ -153,7 +153,7 @@ export function sendDonation(
                                 console.log(`- NO_ORIGINAL_REGISTRATION_WITH_ACCEPTED_TERMS. Orig: ${source_address} - ${error.response.status}`);
                             }
                             else {
-                                if(last_donation_state === 'active')
+                                if(source_address_state.last_donation_state === 'active')
                                     source_address_state.last_info_message = 'Donation state was previously active, but api is saying source address is not registered. Something strange.';
                                 else {
                                     source_address_state.last_donation_state = 'no_source_address_registration';
