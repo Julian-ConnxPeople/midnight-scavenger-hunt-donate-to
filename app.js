@@ -126,10 +126,12 @@ async function processDonations(config, donation_state_entries, { signal }) {
         console.log(`**********************************************************`);
         console.log(`Processing donations for wallet [${wallet_name}].`);
         console.log(`**********************************************************`);
+
+        let end_this_wallet_processin_early = false;
         const wallet = config.source_wallets[wallet_name];
 
         // Get the account range and generate combinations based on the range
-        const { account_range, force_donations } = wallet;
+        const { account_range, force_donations, auto_range_detection } = wallet;
         const { start: account_start, end: account_end } = account_range;
 
         // Note all structure vaidations are done when cofiguration was loaded
@@ -195,7 +197,7 @@ async function processDonations(config, donation_state_entries, { signal }) {
                 const last_donation_state = donation_state_entries[source_payment_address].last_donation_state;
 
                 // Only send donations for those that need it or if we requested a basic check (though check donation doesn't unfortunately check the entire assigment)
-                if(force_donations || last_donation_state !== 'active' || last_donation_state === 'check_donate') {
+                if(force_donations || last_donation_state !== 'active' || config.mode.operation === 'check_donate') {
                     let final_destination_payment_address
                     if(config.mode.operation === 'donate') {                    
                         console.log(`Generating Donate_to from ${source_payment_address}`);
@@ -215,11 +217,20 @@ async function processDonations(config, donation_state_entries, { signal }) {
                     const result = await sendDonation(wallet_name, config, source_payment_address, final_destination_payment_address, signature, donation_state_entries);
 
                     await sleep(config.api.sleep_between_calls_ms); // throttle the calls to the server as needed
+
+                    // End early if donate and conditions for auto detection are met
+                    if(auto_range_detection && config.mode.operation === 'donate' && donation_state_entries[source_payment_address].last_donation_state !== 'active') {
+                        end_this_wallet_processin_early = true;
+                        break; // exit loop
+                    }
                 }
 
                 // Check cancel
                 signal.throwIfAborted();    
             }
+
+            if(end_this_wallet_processin_early)
+                break;
         }
     }
 }
