@@ -1,7 +1,10 @@
 mode:
   # By default, mode is set to test only (it will not send requests to server, but will log problems found with your keys or addresses etc.)
   test_only: true
-  # 'donate', 'check_donate' (default is donate, check_donate unfortunately can only verify if original address is registered and ok, not the actual assigment)
+  # 'donate', 'check_donate' 
+  # default is donate
+  # Check_donate can check origin address status
+  # unfortunately it can't check fully the actual assigment)
   operation: 'donate'
 api:
   url: 'https://scavenger.prod.gd.midnighttge.io'
@@ -21,6 +24,7 @@ global_wallet_settings:
     start: 0
     end: 0
 source_wallets:
+  # First wallet
   my_first_wallet:
     # Only mnemonic is supported right now
     private_key:
@@ -46,6 +50,15 @@ source_wallets:
     payment_addresses:
       - 'addr1...'
       - 'addr1...'
+  # More wallets, for example a simple one with range of first 30 addresses
+  my_second_wallet_example:
+    # Only mnemonic is supported right now
+    private_key:
+      mnemonic: 'your second mnemonic phrase goes here'
+    payment_address_range:
+      start: 0
+      end: 30
+      # .. and so on ..
 destination_address:
   # Comment out all [account_*] info if you do not want to verify against the receving account public key
   # It forms an additional extra verifcation incase of typos (for ShelleyBech32 only type addresses currently)
