@@ -212,9 +212,9 @@ async function processDonations(config, donation_state_entries, { signal }) {
 
                     const signature = signDonation(wallet_name, source_payment_address_hex, source_payment_private_key_hex, data_to_sign);
                     // Shouldn't really pass the donation_state_entries to sendDonation but need something working quickly
-                    const result = sendDonation(wallet_name, config, source_payment_address, final_destination_payment_address, signature, donation_state_entries);
+                    const result = await sendDonation(wallet_name, config, source_payment_address, final_destination_payment_address, signature, donation_state_entries);
 
-                    await sleep(config.api.sleep_between_calls_ms); // throttle the calls to the server
+                    await sleep(config.api.sleep_between_calls_ms); // throttle the calls to the server as needed
                 }
 
                 // Check cancel
