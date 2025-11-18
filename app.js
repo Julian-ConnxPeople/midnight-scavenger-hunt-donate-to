@@ -1,6 +1,7 @@
 import yaml from 'js-yaml';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
+import { resolve, extname }  from 'path';
 import { fileURLToPath } from 'url';
 import { Config } from './src/config/config.js';
 import {
@@ -83,7 +84,8 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function processDonations(config, donation_state_entries) {
+// Process donations (delta or all)
+async function processDonations(config, donation_state_entries) {
     // Get destination payment public address keys if account info is present for verifcation for destination address if desired (account details specified in [destination_address])
     let destination_payment_public_address_keys
     let destination_payment_public_address_raw_key_hex 
@@ -213,80 +215,126 @@ export async function processDonations(config, donation_state_entries) {
     }
 }
 
-// Main function to run the program
-async function main() {
+// function to run the program
+export async function startApp(donations_state_path, json_donation_data) {
+    // ********************************************************
+    // Load configuration from YAML file
+    // ********************************************************
 
-    const donations_state_path = path.join(__dirname, 'donations.json');
-    let json_donation_data;
-    try {
-        // ********************************************************
-        // Load configuration from YAML file
-        // ********************************************************
+    // If no json donation data, let's initalise it
+    if(!json_donation_data || !donations_state_path)
+        throw new Error(`Please provde a valid json donation path and data object to startApp.`);
 
-        // Load config from YAML file
-        const config_path = path.join(__dirname, 'app.yaml');
-        const content = fs.readFileSync(config_path, 'utf8');
-        const yaml_content = yaml.load(content);
+    // Load config from YAML file
+    const config_path = path.join(__dirname, 'app.yaml');
+    const content = fs.readFileSync(config_path, 'utf8');
+    const yaml_content = yaml.load(content);
 
-        if (!yaml_content) {
-            throw new Error('Configuration app.yaml is empty');
+    if (!yaml_content) {
+        throw new Error('Configuration app.yaml is empty');
+    }
+
+    const config = new Config(yaml_content);
+
+    // ********************************************************
+    // Load state data from JSON
+    // ********************************************************
+
+    // Load donation state data from json file
+    // Check if the file exists
+    if (fs.existsSync(donations_state_path)) {
+        try {
+            console.log(donations_state_path);
+            // Synchronously read the file content
+            const donations_json_content = fs.readFileSync(donations_state_path, 'utf8');
+
+            // Parse the JSON content
+            if(donations_json_content)
+                Object.assign(json_donation_data, JSON.parse(donations_json_content)); // Parse the JSON data
+        } catch (error) {
+            throw new Error(`Unable to parse donatations state file at ${donations_state_path}`);
         }
+    } else {
+        console.warn('There is no donations state data yet to load. It will be initialised.');
+    }
 
-        const config = new Config(yaml_content);
+    // Example: Filter data where 'last_donation_state' is "active"
+    //donation_state_entries = Object.entries(json_donation_data);
 
-        // ********************************************************
-        // Load state data from JSON
-        // ********************************************************
+    if (config.mode.test_only) {
+        console.log("*********************************************************")
+        console.log("THIS IS A TEST RUN ONLY. NOTHING WILL BE SENT VIA API !!!")
+        console.log("*********************************************************")
+    }
 
-        // Load donation state data from json file
-        // Check if the file exists
-        if (fs.existsSync(donations_state_path)) {
-            try {
-                console.log(donations_state_path);
-                // Synchronously read the file content
-                const donations_json_content = fs.readFileSync(donations_state_path, 'utf8');
+    console.log(json_donation_data);
 
-                // Parse the JSON content
-                if(donations_json_content)
-                    json_donation_data = JSON.parse(donations_json_content); // Parse the JSON data
-            } catch (error) {
-                throw new Error(`Unable to parse donatations state file at ${donations_state_path}`);
+    // run donations
+    await processDonations(config, json_donation_data);
+}
+
+// AppRunner so we can handle control-c and make sure we capture donations state on exit correctly
+class AppRunner {
+    #donations_state_path = path.join(__dirname, 'donations.json');
+    #json_donation_data = {};
+
+    constructor() {
+        process.on('SIGINT', async () => {
+            console.log(" Ctrl+C handling started...");
+            await this.closeApp();
+            process.exit(0); // ensures app stops
+        });
+    }
+
+    async run() {
+        try {
+            await startApp(this.#donations_state_path, this.#json_donation_data);
+        }
+        catch(error) {
+            console.log(`App failed with error: ${error.message}`);
+        } 
+        finally {
+            await this.closeApp();
+        }
+    }
+
+    jsonDataIsEmpty() {
+        if(this.#json_donation_data) {
+            for (const key in this.#json_donation_data) {
+                if (Object.hasOwn(this.#json_donation_data, key))
+                    return false;
             }
-        } else {
-            console.warn('There is no donations state data yet to load. It will be initialised.');
         }
-        // If no json donation data, let's initalise it
-        if(!json_donation_data)
-            json_donation_data = {};
-
-        // Example: Filter data where 'last_donation_state' is "active"
-        //donation_state_entries = Object.entries(json_donation_data);
-
-        if (config.mode.test_only) {
-            console.log("*********************************************************")
-            console.log("THIS IS A TEST RUN ONLY. NOTHING WILL BE SENT VIA API !!!")
-            console.log("*********************************************************")
-        }
-
-        // run donations
-        await processDonations(config, json_donation_data);
+        return true;
     }
-    catch(error) {
-        console.log(`App failed with error: ${error.message}`);
-    }
-    finally {
-        if(json_donation_data) {
+
+    async closeApp() {
+        //console.log(`Data: ${JSON.stringify(this.#json_donation_data, null, 2)}`);
+        // Only write out if we have the data
+        if(!this.jsonDataIsEmpty()) {
             console.warn(`Writing updated donation state even on app failure (don't interupt process!)`);
             // Convert the updated data back to a JSON string
-            const donations_json_content = JSON.stringify(json_donation_data);
+            const donations_json_content = JSON.stringify(this.#json_donation_data, null, 2);
             // Write the updated data back to the file, overwriting the original file
-            fs.writeFileSync(donations_state_path, donations_json_content, 'utf8');
+            fs.writeFileSync(this.#donations_state_path, donations_json_content, 'utf8');
             console.log(`App completed`);
         }
     }
 }
 
-main().catch(err => {
-    console.error(err);
+// *****************************************************************
+// Handle running of file (when executed as script, not imported )
+// *****************************************************************
+
+const currentFile = fileURLToPath(import.meta.url);
+const executedFile = resolve(process.argv[1]);
+
+// Ensure the executed file includes .js if needed
+const executedFileWithExt = extname(executedFile) ? executedFile : executedFile + '.js';
+
+if (currentFile === executedFileWithExt) {
+  const app = new AppRunner().run().catch((err) => {
+    console.error("Failed to close app cleanly (state maybe affected): ", err);
     process.exit(1);
-});
+  });
+}
