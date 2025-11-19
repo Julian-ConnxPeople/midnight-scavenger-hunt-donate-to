@@ -17,7 +17,7 @@ global_wallet_settings:
   # Detect range automatically within the provided address range for wallets, based on first that fails with origin not registered. Otherwise stops at end of range.
   # This means you can provide a bigger range and it will still stop early when detecting the first address that is not registered.
   # Do not use this with check_donate, or at least be aware check_donate will still check the complete range and not stop early!
-  auto_range_detection: true
+  auto_address_range_detection: true
   account_range:
     start: 0
     end: 0

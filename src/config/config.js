@@ -45,17 +45,17 @@ export class Config {
         for (const wallet_name in wallets) {
             const wallet = wallets[wallet_name];
 
-            let auto_range_detection = wallet?.auto_range_detection;
+            let auto_address_range_detection = wallet?.auto_address_range_detection;
             // Check auto_range_detection
-            if (!(auto_range_detection === true || auto_range_detection === false))
-                auto_range_detection = yaml?.global_wallet_settings?.auto_range_detection;
-            if(!(auto_range_detection === true || auto_range_detection === false)) {
-                auto_range_detection = false; // Set default if not provided at all
-                console.warn(`Using default [auto_range_detection] for wallet '${wallet_name}' to [false] as none specified.`);
+            if (!(auto_address_range_detection === true || auto_address_range_detection === false))
+                auto_address_range_detection = yaml?.global_wallet_settings?.auto_address_range_detection;
+            if(!(auto_address_range_detection === true || auto_address_range_detection === false)) {
+                auto_address_range_detection = false; // Set default if not provided at all
+                console.warn(`Using default [auto_address_range_detection] for wallet '${wallet_name}' to [false] as none specified.`);
             }
-            if(typeof auto_range_detection !== 'boolean')
-                throw Error(`The key [wallet.auto_range_detection] is missing or not defined correctly in the configuration file. Please define/set it correctly or remove.`);
-            this.source_wallets[wallet_name].auto_range_detection = auto_range_detection;
+            if(typeof auto_address_range_detection !== 'boolean')
+                throw Error(`The key [wallet.auto_address_range_detection] is missing or not defined correctly in the configuration file. Please define/set it correctly or remove.`);
+            this.source_wallets[wallet_name].auto_address_range_detection = auto_address_range_detection;
 
             // Check force donations
             let force_donations = wallet?.force_donations;
@@ -78,12 +78,15 @@ export class Config {
 
             // Get wallet specific account_range or fall back to global settings
             let account_range = wallet?.account_range;
+            console.log(account_range);
             if(!account_range)
                 account_range = yaml?.global_wallet_settings?.account_range;
+            console.log(account_range);
             if(!account_range) {
                 account_range =  { start: 0, end: 0 };  // Set default range if not valid
                 console.warn(`Using default [account_range] for wallet '${wallet_name}' { start: 0, end: 0 } as none specified.`);
-            }            
+            }
+            console.log(account_range);
             if (typeof account_range?.start !== 'number' || typeof account_range?.end !== 'number')
                 throw new Error(`Invalid [account_range] for wallet [${wallet_name}]. Both [start] and [end] must be defined and be valid numbers.`);
             // Ensure start is less than or equal to end
