@@ -131,7 +131,7 @@ async function processDonations(config, donation_state_entries, { signal }) {
         const wallet = config.source_wallets[wallet_name];
 
         // Get the account range and generate combinations based on the range
-        const { account_range, force_donations, auto_range_detection } = wallet;
+        const { account_range, force_donations, auto_address_range_detection } = wallet;
         const { start: account_start, end: account_end } = account_range;
 
         // Note all structure vaidations are done when cofiguration was loaded
@@ -147,6 +147,7 @@ async function processDonations(config, donation_state_entries, { signal }) {
 
         // Loop through accounts in the range [start, end]
         for (let account_number = account_start; account_number <= account_end; account_number++) {
+            console.log(`Processing account ${account_number} for wallet [${wallet_name}].`);
             const wallet_payment_and_staking_account_keys = new WalletPaymentAndStakingAccountKeys(wallet_name, wallet_keys.rootPrivateCoinTypeKey, account_number);
             // Get the staking key info that is address 0 (theoretically could be others, but wallets don't do that typically)
             const wallet_staking_account_address_keys = new WalletStakingAccountAddressKeys(wallet_payment_and_staking_account_keys.stakingChainPrivateKey, 0);
@@ -200,7 +201,7 @@ async function processDonations(config, donation_state_entries, { signal }) {
                 if(force_donations || last_donation_state !== 'active' || config.mode.operation === 'check_donate') {
                     let final_destination_payment_address
                     if(config.mode.operation === 'donate') {                    
-                        console.log(`Generating Donate_to from ${source_payment_address}`);
+                        console.log(`Generating Donate_to from ${source_payment_address}, index ${payment_address_index}`);
                         final_destination_payment_address = destination_payment_address;
                     } else if(config.mode.operation === 'check_donate') {
                         // Set nonsense paymnent address
@@ -219,18 +220,17 @@ async function processDonations(config, donation_state_entries, { signal }) {
                     await sleep(config.api.sleep_between_calls_ms); // throttle the calls to the server as needed
 
                     // End early if donate and conditions for auto detection are met
-                    if(auto_range_detection && config.mode.operation === 'donate' && donation_state_entries[source_payment_address].last_donation_state !== 'active') {
+                    if(auto_address_range_detection && config.mode.operation === 'donate' && donation_state_entries[source_payment_address].last_donation_state !== 'active') {
                         end_this_wallet_processin_early = true;
                         break; // exit loop
                     }
                 }
 
                 // Check cancel
-                signal.throwIfAborted();    
-            }
+                signal.throwIfAborted();
 
-            if(end_this_wallet_processin_early)
-                break;
+                // Don't break here as we need to check other account ranges
+            }
         }
     }
 }
