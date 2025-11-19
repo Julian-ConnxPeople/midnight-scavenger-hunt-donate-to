@@ -78,7 +78,7 @@ export class Config {
 
             // Get wallet specific account_range or fall back to global settings
             let account_range = wallet?.account_range;
-            console.log(account_range);
+            //console.log(account_range);
             if(!account_range)
                 account_range = yaml?.global_wallet_settings?.account_range;
             console.log(account_range);
