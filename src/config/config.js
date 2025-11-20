@@ -81,12 +81,12 @@ export class Config {
             //console.log(account_range);
             if(!account_range)
                 account_range = yaml?.global_wallet_settings?.account_range;
-            console.log(account_range);
+            //console.log(account_range);
             if(!account_range) {
                 account_range =  { start: 0, end: 0 };  // Set default range if not valid
                 console.warn(`Using default [account_range] for wallet '${wallet_name}' { start: 0, end: 0 } as none specified.`);
             }
-            console.log(account_range);
+            //console.log(account_range);
             if (typeof account_range?.start !== 'number' || typeof account_range?.end !== 'number')
                 throw new Error(`Invalid [account_range] for wallet [${wallet_name}]. Both [start] and [end] must be defined and be valid numbers.`);
             // Ensure start is less than or equal to end
@@ -107,6 +107,9 @@ export class Config {
             // Get wallet specific payment_address_range or fall back to global settings
             
             let payment_address_range = wallet?.payment_address_range;
+            // Try also to get global payment address range!!
+            if(!payment_address_range)
+                payment_address_range = yaml?.global_wallet_settings?.payment_address_range;
             if(!payment_address_range) {
                 console.warn(`Using default [payment_address_range] for wallet [${wallet_name}] { start: 0, end: 0 } as none specified.`);
                 payment_address_range= { start: 0, end: 0 };  // Set default range
