@@ -158,7 +158,7 @@ async function processDonations(config, donation_state_entries, { signal }) {
 
             // Loop through payment addresses in the range
             for (let payment_address_index = payment_start; payment_address_index <= payment_end; payment_address_index++, index_of_address++) {
-                const wallet_payment_account_address_keys = new WalletPaymentAccountAddressKeys(wallet_payment_and_staking_account_keys.paymentChainPrivateKey, payment_address_index);
+              const wallet_payment_account_address_keys = new WalletPaymentAccountAddressKeys(wallet_payment_and_staking_account_keys.paymentChainPrivateKey, payment_address_index);
                 // We need to get generate the address from the base address, as cardano wasm we are using (non browser version) doesn't expose some things we need
                 var source_payment_address = derivePaymentAddressFromKeys(wallet_name, wallet.payment_address_type, wallet_payment_account_address_keys.paymentPublicAddressRawKey, wallet_staking_account_address_keys.stakingPublicAddressRawKey);
                 const source_payment_public_address_raw_key_hex = wallet_payment_account_address_keys.paymentPublicAddressRawKeyHex;
@@ -201,13 +201,13 @@ async function processDonations(config, donation_state_entries, { signal }) {
                 if(force_donations || last_donation_state !== 'active' || config.mode.operation === 'check_donate') {
                     let final_destination_payment_address
                     if(config.mode.operation === 'donate') {                    
-                        console.log(`Generating Donate_to from ${source_payment_address}, index ${payment_address_index}`);
+                        console.log(`Generating Donate_to from ${source_payment_address}, account ${account_number}, address ${payment_address_index}`);
                         final_destination_payment_address = destination_payment_address;
                     } else if(config.mode.operation === 'check_donate') {
                         // Set nonsense paymnent address
                         // This would either return original address not valid or that the address is bad
                         // Either way we check out own addresses this way without applying a real donation
-                        console.log(`Checking Donate_to from ${source_payment_address}`);
+                        console.log(`Checking Donate_to from ${source_payment_address}, account ${account_number}, address ${payment_address_index}`);
                         final_destination_payment_address = 'addrinvalid';
                     }
 
@@ -224,6 +224,8 @@ async function processDonations(config, donation_state_entries, { signal }) {
                         end_this_wallet_processin_early = true;
                         break; // exit loop
                     }
+                } else if(last_donation_state === 'active') {
+                    console.log(`- OK -  Already active in local state (not resending) - account ${account_number}, address ${payment_address_index}`);
                 }
 
                 // Check cancel
