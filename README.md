@@ -2,8 +2,8 @@
 
 Allows to consolidate Night token claims to a different registered wallet (also good learning about key derivation)
 
-NOTE: Not every wallet type is supported at this point, especially legacy.
-But this will work with things like Lace and Vespr.
+NOTE: All standard Shelley era wallets and addresses are supported inlcluding Enterprise addresses (those that exclude staking).
+It works with things like Lace, Vespr and Enterprise address miners like Shadow-Harvester.
 
 This project also gives good insight into how Cardano private/public keys are derived
 
