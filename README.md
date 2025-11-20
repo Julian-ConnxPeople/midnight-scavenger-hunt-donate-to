@@ -7,6 +7,11 @@ It works with things like Lace, Vespr and Enterprise address miners like Shadow-
 
 This project also gives good insight into how Cardano private/public keys are derived
 
+## Execution
+
+* Change app.yaml to your requirements (see file) 
+* Run in node.js using: node app
+
 ## Linux Environment
 
 * NVM
