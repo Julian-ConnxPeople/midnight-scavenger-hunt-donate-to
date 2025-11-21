@@ -300,11 +300,20 @@ class AppRunner {
     #abortController = new AbortController();
     #donations_state_path = path.join(__dirname, 'donations.json');
     #json_donation_data = {};
+    #currentTask = null;
 
     constructor() {
         process.on('SIGINT', async () => {
             console.log(" Ctrl+C handling started...");
             this.#abortController.abort();  // request cancel of running process
+
+            // Make sure we wait for current task to finish
+            if (this.#currentTask) {
+                try {
+                    await this.#currentTask; // <-- wait for startApp() to finish cleaning up
+                } catch (_) {}
+            }
+
             await this.closeApp();
             process.exit(0); // ensures app stops
         });
@@ -312,11 +321,15 @@ class AppRunner {
 
     async run() {
         try {
-            await startApp(
-                this.#donations_state_path, 
-                this.#json_donation_data,
-                { signal: this.#abortController.signal } );
+            // store the running task so we can wait for it later
+            this.#currentTask = startApp(
+                    this.#donations_state_path, 
+                    this.#json_donation_data,
+                    { signal: this.#abortController.signal } );
+
+            await this.#currentTask;
         }
+
         catch(error) {
             console.log(`App failed with error: ${error.message}`);
         } 
