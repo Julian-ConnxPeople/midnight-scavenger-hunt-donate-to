@@ -1,11 +1,16 @@
 # midnight-scavenger-hunt-donate-to
 
-Allows to consolidate Night token claims to a different registered wallet (also good learning about key derivation)
+THE MIDNIGHT SCAVENGER HUNT ENDED (21st, November, 2025)
 
-NOTE: All standard Shelley era wallets and addresses are supported inlcluding Enterprise addresses (those that exclude staking).
+This project still serves as a reference for - 
+1) how to derive Cardano private/public keys, including stake keys, and also addresses.
+2) how basic async app structure with save Contro-C shutdown can be implemented.
+3) how apis can be called using axios and responses dealt with
+
+This project allowed to consolidate Midnight $NIGHT token claims to a different also registered wallet, keeping a registration of those donations.
+
+NOTE: All standard Shelley era wallets and addresses supported inlcluding Enterprise addresses (those that exclude staking).
 It works with things like Lace, Vespr and Enterprise address miners like Shadow-Harvester.
-
-This project also gives good insight into how Cardano private/public keys are derived
 
 ## Execution
 
