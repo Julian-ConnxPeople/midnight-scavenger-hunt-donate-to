@@ -3,7 +3,7 @@
 THE MIDNIGHT SCAVENGER HUNT ENDED (21st, November, 2025)
 
 This project still serves as a reference for - 
-1) how to derive Cardano private/public keys, including stake keys, and also addresses.
+1) how to derive Cardano private/public keys, including stake keys, and also addresses (in javascript, node.js).
 2) how basic async app structure with save Contro-C shutdown can be implemented.
 3) how apis can be called using axios and responses dealt with
 
